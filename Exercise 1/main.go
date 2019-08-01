@@ -11,6 +11,7 @@ import (
 
 func main() {
 	csvFilename := flag.String("csv", "problems.csv", "A csv delimited set of questions and solutions")
+	timeLimit := flag.Int("limit", 30, "the timelimit for the quiz in seconds")
 	flag.Parse()
 
 	fmt.Print("Opening question file\n")
@@ -27,37 +28,46 @@ func main() {
 	}
 
 	rand.Seed(time.Now().Unix())
-
+	quit := make(chan bool)
 	var correct int
 	var wrong int
+	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
 
-	fmt.Printf("Enter the answer to each question.\nWhen you are finished type the word `done`\n")
+	fmt.Printf("Enter the answer to each question.\n")
 
-	for {
-		r := rand.Intn(len(lines))
+	go func() {
+		for {
+			r := rand.Intn(len(lines))
 
-		fmt.Print("What is the answer to \n", lines[r][0], "\n")
+			fmt.Print("What is the answer to \n", lines[r][0], "\n")
 
-		var input string
-		fmt.Scanln(&input)
+			var input string
+			fmt.Scanln(&input)
 
-		if input == "done" {
-			break
+			if input == "done" {
+				break
+			}
+
+			if input == lines[r][1] {
+				correct++
+				fmt.Print("Correct!\n")
+
+			} else {
+				wrong++
+				fmt.Print("Boo incorrect!\n")
+			}
 		}
+	}()
 
-		if input == lines[r][1] {
-			correct++
-			fmt.Print("Correct!\n")
+	go func() {
+		<-timer.C
+		quit <- true
+	}()
 
-		} else {
-			wrong++
-			fmt.Print("Boo incorrect!\n")
-		}
-	}
+	<-quit
 
 	fmt.Print("You got ", correct, " correct.\n")
 	fmt.Print("You got ", wrong, " wrong.\n")
-	fmt.Print("That is a ", 100*float64(correct)/(float64(correct)+float64(wrong)), "% hit rate.\n")
-
+	fmt.Print("That is a ", 100*float64(correct)/(float64(correct)+float64(wrong)), "% score.\n")
 	os.Exit(0)
 }
