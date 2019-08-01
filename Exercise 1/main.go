@@ -28,7 +28,6 @@ func main() {
 	}
 
 	rand.Seed(time.Now().Unix())
-	quit := make(chan bool)
 	var correct int
 	var wrong int
 	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
@@ -59,12 +58,7 @@ func main() {
 		}
 	}()
 
-	go func() {
-		<-timer.C
-		quit <- true
-	}()
-
-	<-quit
+	<-timer.C
 
 	fmt.Print("You got ", correct, " correct.\n")
 	fmt.Print("You got ", wrong, " wrong.\n")
